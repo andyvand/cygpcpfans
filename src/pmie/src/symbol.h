@@ -78,10 +78,10 @@ void symSetTable(SymbolTable *);
 void symClearTable(SymbolTable *);
 
 /* convert string to symbol */
-Symbol symIntern(SymbolTable *, char *);
+Symbol symIntern(SymbolTable *, const char *);
 
 /* lookup symbol by name */
-Symbol symLookup(SymbolTable *, char *);
+Symbol symLookup(SymbolTable *, const char *);
 
 /* copy symbol */
 Symbol symCopy(Symbol);

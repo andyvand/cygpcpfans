@@ -28,13 +28,13 @@
 #include "pmapi.h"
 
 /* report where PCP data is coming from */
-char *findsource(char *);
+char *findsource(const char *, const char *);
 
 /* initialize performance metrics API */
 void pmcsInit(void);
 
 /* juggle contexts */
-int newContext(char *);
+int newContext(Symbol *, const char *);
 
 /* initialize access to archive */
 int initArchive(Archive *);

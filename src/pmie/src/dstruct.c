@@ -2,7 +2,7 @@
  * dstruct.c - central data structures and associated operations
  ***********************************************************************
  *
- * Copyright (c) 2013 Red Hat.
+ * Copyright (c) 2013-2014 Red Hat.
  * Copyright (c) 1995-2003 Silicon Graphics, Inc.  All Rights Reserved.
  * 
  * This program is free software; you can redistribute it and/or modify it
@@ -53,7 +53,6 @@ Archive		*archives;			/* list of open archives */
 RealTime	first = -1;			/* archive starting point */
 RealTime	last = 0.0;			/* archive end point */
 char		*dfltHostConn;			/* default host connection string */
-char		*dfltHostName;			/* default host name */
 RealTime	dfltDelta = DELTA_DFLT;		/* default sample interval */
 char		*startFlag;			/* start time specified? */
 char		*stopFlag;			/* end time specified? */
@@ -68,7 +67,6 @@ int		isdaemon;			/* run as a daemon */
 int		agent;				/* secret agent mode? */
 int		applet;				/* applet mode? */
 int		dowrap;				/* counter wrap? default no */
-int		noDnsFlag;			/* do a default name lookup? */
 pmiestats_t	*perf;				/* live performance data */
 pmiestats_t	instrument;			/* used if no mmap (archive) */
 
@@ -477,11 +475,12 @@ newFetch(Host *owner)
 
 
 Host *
-newHost(Task *owner, Symbol name)
+newHost(Task *owner, Symbol name, Symbol conn)
 {
     Host *h = (Host *) zalloc(sizeof(Host));
 
     h->name = symCopy(name);
+    h->conn = symCopy(conn);
     h->task = owner;
     return h;
 }
@@ -897,8 +896,6 @@ void dstructInit(void)
 
     /* not-a-number initialization */
     mynan = zero / zero;
-
-    /* don't initialize dfltHost*; let pmie.c do it after getopt. */
 
     /* set up symbol tables */
     symSetTable(&hosts);

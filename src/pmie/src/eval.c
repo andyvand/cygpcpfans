@@ -104,7 +104,7 @@ typedef struct hstate {
 static hstate_t	*host_map = NULL;
 
 int
-host_state_changed(char *host, int state)
+host_state_changed(const char *host, int state) /* NB: host == hostname, not connection string */
 {
     hstate_t	*hsp;
 

@@ -2,7 +2,7 @@
  * pmie.c - performance inference engine
  ***********************************************************************
  *
- * Copyright (c) 2013 Red Hat, Inc.
+ * Copyright (c) 2013-2014 Red Hat, Inc.
  * Copyright (c) 1995-2003 Silicon Graphics, Inc.  All Rights Reserved.
  * 
  * This program is free software; you can redistribute it and/or modify it
@@ -84,7 +84,6 @@ static char usage[] =
     "  -d           interactive debugging mode\n"
     "  -e           force timestamps to be reported when used with -V, -v or -W\n"
     "  -f           run in foreground\n"
-    "  -H           do not do a name lookup on the default hostname\n"
     "  -h host      metrics source is PMCD on host\n"
     "  -j stompfile stomp protocol (JMS) file [default %s%cconfig%cpmie%cstomp]\n"
     "  -l logfile   send status and error messages to logfile\n"
@@ -367,8 +366,11 @@ startmonitor(void)
     path = (logfile[0] == '\0') ? "<none>" : logfile;
     strncpy(perf->logfile, path, sizeof(perf->logfile));
     perf->logfile[sizeof(perf->logfile)-1] = '\0';
-    strncpy(perf->defaultfqdn, dfltHostName, sizeof(perf->defaultfqdn));
+    /* Don't try to improvise a current fdqn for "the" pmcd. 
+       It'll be filled in periodically by newContext(). */
+    strncpy(perf->defaultfqdn, "(uninitialized)", sizeof(perf->defaultfqdn));
     perf->defaultfqdn[sizeof(perf->defaultfqdn)-1] = '\0';
+
     perf->version = 1;
 }
 
@@ -417,8 +419,8 @@ sighupproc(int sig)
 
     fp = __pmRotateLog(pmProgname, logfile, logfp, &sts);
     if (sts != 0) {
-	fprintf(stderr, "pmie: PID = %" FMT_PID ", default host = %s via %s\n\n",
-                getpid(), dfltHostName, dfltHostConn);
+	fprintf(stderr, "pmie: PID = %" FMT_PID ", default host via %s\n\n",
+                getpid(), dfltHostConn);
 	remap_stdout_stderr();
 	logfp = fp;
     } else {
@@ -570,7 +572,7 @@ getargs(int argc, char *argv[])
 	    break;
 
 	case 'H': 			/* no name lookup on exported host */
-	    noDnsFlag = 1;
+            /* obsolete */
 	    break;
 
 	case 'h': 			/* default host name */
@@ -582,7 +584,6 @@ getargs(int argc, char *argv[])
 	    }
 	    dfltConn = PM_CONTEXT_HOST;
 	    dfltHostConn = optarg;
-            dfltHostName = ""; /* unknown until newContext */
 	    break;
 
         case 'j':			/* stomp protocol (JMS) config */
@@ -742,41 +743,16 @@ getargs(int argc, char *argv[])
 	a = archives;
 	while (a->next)
 	    a = a->next;
-	dfltHostName = a->hname; /* already filled in during initArchive() */
+        dfltHostConn = a->fname;
     } else if (!dfltConn || dfltConn == PM_CONTEXT_HOST) {
 	if (dfltConn == 0)	/* default case, no -a or -h */
 	    dfltHostConn = "local:";
-	sts = pmNewContext(PM_CONTEXT_HOST, dfltHostConn);
-	/* pmcd down locally, try to extract hostname manually */
-	if (sts < 0 && (!dfltConn ||
-			!strcmp(dfltHostConn, "localhost") ||
-			!strcmp(dfltHostConn, "local:") ||
-			!strcmp(dfltHostConn, "unix:")))
-	    sts = pmNewContext(PM_CONTEXT_LOCAL, NULL);
-	if (sts < 0) {
-	    __pmNotifyErr(LOG_ERR, "%s: cannot find host name for %s\n"
-			"pmNewContext failed: %s\n",
-			pmProgname, dfltHostConn, pmErrStr(sts));
-	    dfltHostName = "?";
-	} else {
-	    const char	*tmp;
-	    tmp = pmGetContextHostName(sts);
-	    if (strlen(tmp) == 0) {
-		fprintf(stderr, "%s: pmGetContextHostName(%d) failed\n",
-		    pmProgname, sts);
-		exit(EXIT_FAILURE);
-	    }
-	    if ((dfltHostName = strdup(tmp)) == NULL)
-		__pmNoMem("host name copy", strlen(tmp)+1, PM_FATAL_ERR);
-	    pmDestroyContext(sts);
-        }
     }
-    assert (dfltHostName != NULL);
 
     if (!archives && !interactive) {
 	if (commandlog != NULL)
-            fprintf(stderr, "pmie: PID = %" FMT_PID ", default host = %s via %s\n\n",
-                    getpid(), dfltHostName, dfltHostConn);
+            fprintf(stderr, "pmie: PID = %" FMT_PID ", default host via %s\n\n",
+                    getpid(), dfltHostConn);
 	startmonitor();
     }
 

@@ -508,7 +508,7 @@ showSyn(FILE *f, Expr *x)
 	m = x->metrics;
 	fprintf(f, "%s", symName(m->mname));
 	for (i = 0; i < x->hdom; i++) {
-	    fprintf(f, " :%s", symName(m->hname));
+	    fprintf(f, " :%s", symName(m->hname)); /* or m->hconn? */
 	    m++;
 	}
 	m = x->metrics;

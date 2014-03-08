@@ -40,7 +40,7 @@ void invalidate(void);
 #define STATE_FAILINIT	1
 #define STATE_RECONN	2
 #define STATE_LOSTCONN	3
-int host_state_changed(char *, int);
+int host_state_changed(const char *, int);
 
 #endif /* EVAL_H */
 

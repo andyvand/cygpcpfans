@@ -49,7 +49,7 @@ findsource(const char *host, const char *hconn)
     if (archives)
         snprintf(buf, sizeof(buf), "archive %s (host %s)", hconn, host);
     else
-	snprintf(buf, sizeof(buf), "host %s", host); /* XXX: print hconn too? */
+	snprintf(buf, sizeof(buf), "pmcd %s (host %s)", hconn, host);
 
     return buf;
 }
@@ -73,10 +73,7 @@ newContext(Symbol *host, const char *hconn)
                     pmProgname, hconn);
             fprintf(stderr, "pmNewContext: %s\n", pmErrStr(sts));
             exit(1);
-        } else {		/* no archive for host */
-	    fprintf(stderr, "%s: no archive for host %s\n", pmProgname, hconn);
-	    exit(1);
-	}
+        }
     }
     else if ((sts = pmNewContext(PM_CONTEXT_HOST, hconn)) < 0) {
         const char *host2 = symName(*host);
@@ -566,16 +563,15 @@ zoneInit(void)
 {
     int		sts;
     int		handle = -1;
-    Archive	*a;
 
     if (timeZone) {			/* TZ from timezone string */
 	if ((sts = pmNewZone(timeZone)) < 0)
 	    fprintf(stderr, "%s: cannot set timezone to %s\n"
 		    "pmNewZone failed: %s\n", pmProgname, timeZone,
 		    pmErrStr(sts));
-    }
-    else if (! archives && hostZone) {	/* TZ from live host */
-	if ((handle = pmNewContext(PM_CONTEXT_HOST, dfltHostConn)) < 0)
+    } 
+    else if (hostZone) { /* TZ from live host or archive */
+	if ((handle = pmNewContext(archives ? PM_CONTEXT_ARCHIVE : PM_CONTEXT_HOST, dfltHostConn)) < 0)
 	    fprintf(stderr, "%s: cannot set timezone from %s\n"
 		    "pmNewContext failed: %s\n", pmProgname,
 		    dfltHostConn, pmErrStr(handle));
@@ -586,22 +582,6 @@ zoneInit(void)
 	else
 	    fprintf(stdout, "%s: timezone set to local timezone from %s\n",
 		    pmProgname, dfltHostConn);
-	if (handle >= 0)
-	    pmDestroyContext(handle);
-    }
-    else if (hostZone) {		/* TZ from an archive */
-	a = archives;
-        assert (a != NULL);
-	if ((handle = pmNewContext(PM_CONTEXT_ARCHIVE, a->fname)) < 0)
-	    fprintf(stderr, "%s: cannot set timezone from %s\npmNewContext failed: %s\n",
-		    pmProgname, a->fname, pmErrStr(handle));
-	else if ((sts = pmNewContextZone()) < 0)
-	    fprintf(stderr, "%s: cannot set timezone from %s\n"
-		    "pmNewContextZone failed: %s\n",
-		    pmProgname, a->fname, pmErrStr(sts));
-	else
-	    fprintf(stdout, "%s: timezone set to local timezone of %s\n",
-		    pmProgname, a->fname);
 	if (handle >= 0)
 	    pmDestroyContext(handle);
     }

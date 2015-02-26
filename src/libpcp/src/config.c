@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 Red Hat.
+ * Copyright (c) 2012-2015 Red Hat.
  * Copyright (c) 2008-2009 Aconex.  All Rights Reserved.
  * Copyright (c) 2000-2002 Silicon Graphics, Inc.  All Rights Reserved.
  * 
@@ -197,12 +197,15 @@ __pmConfig(__pmConfigCallback formatter)
     if (access((const char *)conf, R_OK) < 0 ||
 	(fp = fopen(conf, "r")) == (FILE *)NULL) {
 	char	errmsg[PM_MAXERRMSGLEN];
-	pmprintf("FATAL PCP ERROR: could not open config file \"%s\" : %s\n",
+        /* NB: pmprintf recursively calls pmGetConfig() via vmpmprintf. */
+	pmprintf("PCP ERROR: could not open config file \"%s\" : %s\n",
 		conf, osstrerror_r(errmsg, sizeof(errmsg)));
 	pmprintf("You may need to set PCP_CONF or PCP_DIR in your environment.\n");
 	pmflush();
 	PM_UNLOCK(__pmLock_libpcp);
-	exit(1);
+        /* RHBZ1187588: don't exit() from a library function, just
+           because of configuration problems. */
+        return;
     }
 
     while (fgets(var, sizeof(var), fp) != NULL) {

@@ -1,6 +1,6 @@
 '\"macro stdmacro
 .\"
-.\" Copyright (c) 2012 Red Hat.
+.\" Copyright (c) 2012-2015 Red Hat.
 .\" Copyright (c) 2000 Silicon Graphics, Inc.  All Rights Reserved.
 .\" 
 .\" This program is free software; you can redistribute it and/or modify it
@@ -70,12 +70,9 @@ If
 .I variable
 is not found in either the environment nor the PCP configuration file then
 the return value is an empty string.
-If the
-PCP configuration file is not found
-then a fatal error message is printed and the process will
-.BR exit (2)
-\- although this sounds drastic, it is the only course of action available
-because the PCP configuration/installation is fatally flawed.
+In addition, if the PCP configuration file is not found,
+then an error message is printed, to alert the user that the PCP
+configuration/installation is flawed.
 .PP
 If the
 .B pmGetConfig
